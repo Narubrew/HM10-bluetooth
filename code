@@ -1,0 +1,47 @@
+#include <SoftwareSerial.h>
+SoftwareSerial HM10(2, 3);                                    /* Bestämt värde för RX och TX: RX = 2, TX = 3 */                                                    
+void setup() {
+  Serial.begin(115200);                                       /* Baud rate 115200 för smartphones */                                                    
+  Serial.println("HM10 serial started at 115200");
+  HM10.begin(115200);                                                        
+} 
+ 
+void loop()
+{
+  HM10.listen();                                                                                                                                     
+  while(HM10.available() > 0){
+    delay(10);                                                /* Delay används för att förhindra problem om man skickar kommandon för fort */
+    
+    /* Läs alla tre tecken */
+    char nummer1 = HM10.read();                                            
+    char nummer2 = HM10.read();                                                
+    char nummer3 = HM10.read(); 
+ 
+    /* Alla tecken efter de tre första kastas bort */
+    HM10.flush();
+ 
+    /* Gör om våra tecken till ett nummer */
+    char myarray[4] = {nummer1, nummer2, nummer3, '\0'};                      
+    int pwm;
+    sscanf(myarray, "%d", &pwm);
+    float pwmf = (float) pwm;                                 /* Kasta om int till float */
+
+    /* Sätt värden på PWM 5 och PWM 6 */
+    if(pwm > 100){                                            
+      analogWrite(5, 0);                                      /* Avaktivera för PWM 5 */
+      int styrsignal = ((pwmf - 100.0f)/100.0f)*255.0f;       /* .0f gör om int till float */
+      Serial.println(styrsignal);
+      analogWrite(6, styrsignal); 
+    }
+    else if(pwm <= 99){
+      analogWrite(6, 0);                                      /* Avaktivera för PWM 6 */
+      int styrsignal = ((100.0f - pwmf)/100.0f)*255.0f;       /* .0f gör om int till float */
+      Serial.println(styrsignal);
+      analogWrite(5, styrsignal); 
+    }
+    else{
+      analogWrite(5, 0);                                      /* Avaktivera för PWM 5 */
+      analogWrite(6, 0);                                      /* Avaktivera för PWM 6 */
+    }
+  }
+}
